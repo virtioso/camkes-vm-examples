@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 3.8.2)
 
-project(camkes-arm-tk1-vm C)
+project(camkes-vm-minimal C)
 
 include(${CAMKES_ARM_VM_HELPERS_PATH})
 
@@ -159,6 +159,20 @@ elseif("${KernelARMPlatform}" STREQUAL "zcu102")
     list(APPEND cpp_includes "${CAMKES_VM_DIR}/components/VM_Arm/plat_include/zynqmp")
 
     CAmkESAddImportPath(${KernelARMPlatform}/${VmZynqmpPetalinuxVersion})
+
+elseif("${KernelARMPlatform}" STREQUAL "rpi4")
+    find_package(camkes-vm-linux REQUIRED)
+    include(${CAMKES_VM_LINUX_HELPERS_PATH})
+    set(cpp_flags "-DKERNELARMPLATFORM_RPI4")
+
+    # Add kernel image to file server
+    AddToFileServer("linux" "${CAMKES_VM_IMAGES_DIR}/rpi4/linux")
+
+    # Generate overlayed rootfs
+    set(rootfs_file "${CAMKES_VM_IMAGES_DIR}/rpi4/rootfs.cpio.gz")
+
+    AddToFileServer("linux-initrd" ${rootfs_file} )
+
 endif()
 
 AddCamkesCPPFlag(cpp_flags CONFIG_VARS VmEmmc2NoDMA VmVUSB Tk1DeviceFwd Tk1Insecure)

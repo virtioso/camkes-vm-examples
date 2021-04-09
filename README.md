@@ -20,6 +20,7 @@ Currently the supported platforms include:
 * ZCU102
 * x86
 * x86_64
+* Raspberry Pi 4
 
 ## Getting and Building
 
