@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
-set(supported "tk1;tx1;tx2;exynos5422;qemu-arm-virt;odroidc2;zcu102;rpi4")
+set(supported "tk1;tx1;tx2;exynos5422;qemu-arm-virt;odroidc2;zcu102;rpi4;orinagx")
 if(NOT "${PLATFORM}" IN_LIST supported)
     message(FATAL_ERROR "PLATFORM: ${PLATFORM} not supported.
          Supported: ${supported}")
@@ -43,4 +43,10 @@ endif()
 if(${PLATFORM} STREQUAL "zcu102")
     set(AARCH64 ON CACHE BOOL "" FORCE)
     set(KernelAllowSMCCalls ON CACHE BOOL "" FORCE)
+endif()
+if(${PLATFORM} STREQUAL "orinagx")
+    set(VmPCISupport ON CACHE BOOL "" FORCE)
+    set(VmVirtioNet ON CACHE BOOL "" FORCE)
+    set(VmInitRdFile ON CACHE BOOL "" FORCE)
+    set(VmDtbFile ON CACHE BOOL "" FORCE)
 endif()

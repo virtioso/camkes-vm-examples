@@ -173,6 +173,24 @@ elseif("${KernelARMPlatform}" STREQUAL "rpi4")
 
     AddToFileServer("linux-initrd" ${rootfs_file} )
 
+elseif("${KernelARMPlatform}" STREQUAL "orinagx")
+    find_package(camkes-vm-linux REQUIRED)
+    include(${CAMKES_VM_LINUX_HELPERS_PATH})
+    set(cpp_flags "-DKERNELARMPLATFORM_ORINAGX")
+
+    AddToFileServer("linux" "${CAMKES_VM_IMAGES_DIR}/orinagx/linux")
+    set(rootfs_file "${CAMKES_VM_IMAGES_DIR}/orinagx/rootfs.cpio.gz")
+    AddToFileServer("linux-initrd" ${rootfs_file})
+    # Updated dtb based on initrd
+    UpdateDtbFromInitrd(
+        "${CAMKES_VM_IMAGES_DIR}/orinagx/linux-dtb"
+        ${rootfs_file}
+        "0x9D000000"
+        dtb_gen_target
+        output_dtb_location
+    )
+    AddToFileServer("linux-dtb" "${output_dtb_location}" DEPENDS dtb_gen_target)
+
 endif()
 
 AddCamkesCPPFlag(cpp_flags CONFIG_VARS VmEmmc2NoDMA VmVUSB Tk1DeviceFwd Tk1Insecure)
