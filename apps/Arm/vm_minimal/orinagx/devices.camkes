@@ -39,7 +39,7 @@ assembly {
         };
 
         vm0.vm_image_config = {
-            "kernel_bootcmdline" : "console=ttyAMA0,115200 earlycon=pl011,mmio32,0x31d0000 debug init=/sbin/init",
+            "kernel_bootcmdline" : "console=ttyAMA0,115200 earlycon=pl011,mmio32,0x31d0000 debug init=/sbin/init arm64.nopauth maxcpus=1",
             "kernel_stdout" : "/serial@31d0000",
             "kernel_name" : "linux",
             "generate_dtb" : true,
