@@ -18,26 +18,37 @@
 #define VM_INITRD_MAX_SIZE 0x2000000  /* 32 MB */
 #define VM_RAM_BASE     0x90000000
 #define VM_RAM_SIZE     0x10000000   /* 256 MB */
-#define VM_RAM_OFFSET   0
 #define VM_DTB_ADDR     0x9E000000
 #define VM_INITRD_ADDR  0x9D000000
+/*
+ * ARM64 boot protocol requires kernel Image at text_offset from 2MB-aligned
+ * base. Standard text_offset is 0x80000, but some platforms need 2MB offset.
+ * Like RPi4, Orin AGX requires 2MB offset for proper boot.
+ */
+#define VM_ENTRY_ADDR   0x90200000
 
 assembly {
     composition {}
     configuration {
-        vm0.linux_address_config = {
-            "linux_ram_base" : VAR_STRINGIZE(VM_RAM_BASE),
-            "linux_ram_paddr_base" : VAR_STRINGIZE(VM_RAM_BASE),
-            "linux_ram_size" : VAR_STRINGIZE(VM_RAM_SIZE),
-            "linux_ram_offset" : VAR_STRINGIZE(VM_RAM_OFFSET),
+        vm0.vm_address_config = {
+            "ram_base" : VAR_STRINGIZE(VM_RAM_BASE),
+            "ram_paddr_base" : VAR_STRINGIZE(VM_RAM_BASE),
+            "ram_size" : VAR_STRINGIZE(VM_RAM_SIZE),
             "dtb_addr" : VAR_STRINGIZE(VM_DTB_ADDR),
-            "initrd_max_size" : VAR_STRINGIZE(VM_INITRD_MAX_SIZE),
-            "initrd_addr" : VAR_STRINGIZE(VM_INITRD_ADDR)
+            "initrd_addr" : VAR_STRINGIZE(VM_INITRD_ADDR),
+            "kernel_entry_addr" : VAR_STRINGIZE(VM_ENTRY_ADDR)
         };
 
-        vm0.linux_image_config = {
-            "linux_bootcmdline" : "console=ttyTCU0,115200 earlycon=tegra_comb_uart,mmio32,0x0c168000 debug init=/sbin/init",
-            "linux_stdout" : "/serial@c168000",
+        vm0.vm_image_config = {
+            "kernel_bootcmdline" : "console=ttyTCU0,115200 earlycon=tegra_comb_uart,mmio32,0x0c168000 debug init=/sbin/init",
+            "kernel_stdout" : "/serial@c168000",
+            "kernel_name" : "linux",
+            "generate_dtb" : true,
+            "provide_dtb" : false,
+            "provide_initrd" : true,
+            "initrd_name" : "linux-initrd",
+            "map_one_to_one" : false,
+            "clean_cache" : true
         };
         vm0.num_vcpus = 4;
 
