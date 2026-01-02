@@ -6,9 +6,8 @@
  * VM configuration for NVIDIA Orin AGX (Tegra234)
  *
  * Key devices passed through to guest:
- * - TCU: Tegra Combined UART for console (via HSP mailbox)
+ * - UARTI: SBSA/PL011 UART for console (simple MMIO, earlycon compatible)
  * - HSP Top0: Hardware Synchronization Primitives for BPMP doorbell
- * - HSP AON: HSP for Always-On domain (TCU uses this)
  * - SRAM: Shared memory for CPU-BPMP message passing
  * - BPMP: Boot and Power Management Processor (clocks, resets, power)
  */
@@ -40,8 +39,8 @@ assembly {
         };
 
         vm0.vm_image_config = {
-            "kernel_bootcmdline" : "console=ttyTCU0,115200 earlycon=tegra_comb_uart,mmio32,0x0c168000 debug init=/sbin/init",
-            "kernel_stdout" : "/serial@c168000",
+            "kernel_bootcmdline" : "console=ttyAMA0,115200 earlycon=pl011,mmio32,0x31d0000 debug init=/sbin/init",
+            "kernel_stdout" : "/serial@31d0000",
             "kernel_name" : "linux",
             "generate_dtb" : true,
             "provide_dtb" : false,
@@ -52,17 +51,17 @@ assembly {
         };
         vm0.num_vcpus = 4;
 
-        /* Pass through BPMP-related devices for clock/reset/power control */
+        /* Pass through devices for console and clock/reset/power control */
         vm0.dtb = dtb([
-            {"path": "/serial@c168000"},      /* TCU console */
+            {"path": "/serial@31d0000"},      /* UARTI - SBSA/PL011 UART console */
             {"path": "/tegra-hsp@3c00000"},   /* HSP Top0 - BPMP doorbell */
-            {"path": "/tegra-hsp@c150000"},   /* HSP AON - TCU comms */
             {"path": "/sram@40000000"},       /* CPU-BPMP shared memory */
             {"path": "/bpmp"}                 /* BPMP node */
         ]);
 
         vm0.untyped_mmios = [
             "0x90000000:28",   /* 256MB VM RAM */
+            "0x31d0000:12",    /* UARTI - 4KB page */
         ];
     }
 }
