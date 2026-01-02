@@ -53,15 +53,15 @@ assembly {
 
         /* Pass through devices for console and clock/reset/power control */
         vm0.dtb = dtb([
-            {"path": "/serial@31d0000"},      /* UARTI - SBSA/PL011 UART console */
+            {"path": "/serial@31d0000"},      /* UARTI - SBSA UART console */
             {"path": "/tegra-hsp@3c00000"},   /* HSP Top0 - BPMP doorbell */
             {"path": "/sram@40000000"},       /* CPU-BPMP shared memory */
             {"path": "/bpmp"}                 /* BPMP node */
         ]);
 
+        /* VM RAM - device frames from dtb() passthrough are auto-generated */
         vm0.untyped_mmios = [
             "0x90000000:28",   /* 256MB VM RAM */
-            "0x31d0000:12",    /* UARTI - 4KB page */
         ];
     }
 }
