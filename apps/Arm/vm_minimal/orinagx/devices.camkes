@@ -63,8 +63,11 @@ assembly {
             {"path": "/bus@0/hsp@3c00000"},   /* HSP Top0 - BPMP doorbell */
             {"path": "/bus@0/hsp@c150000"},   /* HSP AON - device frame for TCU mbox */
             {"path": "/bus@0/mmc@3460000"},   /* SDMMC4 - internal eMMC */
+            {"path": "/bus@0/phy@3f20000"},   /* P2U PHY for MGBE0 */
+            {"path": "/bus@0/ethernet@6800000"}, /* MGBE0 - Gigabit Ethernet */
             {"path": "/sram@40000000"},       /* CPU-BPMP shared memory */
             {"path": "/bpmp"}                 /* BPMP node */
+            /* mgbe-vm-irq-config is added by fdt_plat_customize() with children */
         ]);
 
         /* Platform defaults from vmlinux.h include timer, psci, gic, TCU, UARTI, HSP, BPMP */
@@ -75,18 +78,25 @@ assembly {
         ];
 
         /*
-         * IRQ passthrough for HSP and UART devices.
+         * IRQ passthrough for HSP, UART, and Ethernet devices.
          * GIC INTID = SPI number + 32
          *
          * HSP Top0 doorbell: SPI 176 -> INTID 208 (BPMP communication)
          * HSP AON shared1: SPI 133 -> INTID 165 (TCU mailbox)
          * UARTI: SPI 146 -> INTID 178 (backup console)
+         * SDMMC4: SPI 65 -> INTID 97 (internal eMMC)
+         * P2U PHY: SPI 203 -> INTID 235 (MGBE0 PHY)
+         * MGBE0 common: SPI 384 -> INTID 416 (Gigabit Ethernet)
+         * MGBE0 vm0: SPI 385 -> INTID 417 (DMA channel 0 IRQ)
          */
         vm0.dtb_irqs = [
             208,    /* HSP Top0 doorbell (SPI 176) - BPMP */
             165,    /* HSP AON shared1 (SPI 133) - TCU */
             178,    /* UARTI (SPI 146) */
             97,     /* SDMMC4 (SPI 65) - internal eMMC */
+            235,    /* P2U PHY (SPI 203) - MGBE0 PHY */
+            416,    /* MGBE0 common (SPI 384) - Gigabit Ethernet */
+            417,    /* MGBE0 vm0 (SPI 385) - DMA channel 0 */
         ];
     }
 }
