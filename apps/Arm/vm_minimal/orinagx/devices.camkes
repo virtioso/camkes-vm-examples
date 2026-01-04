@@ -62,6 +62,7 @@ assembly {
             {"path": "/bus@0/serial@31d0000"}, /* UARTI - SBSA UART (earlycon) */
             {"path": "/bus@0/hsp@3c00000"},   /* HSP Top0 - BPMP doorbell */
             {"path": "/bus@0/hsp@c150000"},   /* HSP AON - device frame for TCU mbox */
+            {"path": "/bus@0/mmc@3460000"},   /* SDMMC4 - internal eMMC */
             {"path": "/sram@40000000"},       /* CPU-BPMP shared memory */
             {"path": "/bpmp"}                 /* BPMP node */
         ]);
@@ -85,6 +86,7 @@ assembly {
             208,    /* HSP Top0 doorbell (SPI 176) - BPMP */
             165,    /* HSP AON shared1 (SPI 133) - TCU */
             178,    /* UARTI (SPI 146) */
+            97,     /* SDMMC4 (SPI 65) - internal eMMC */
         ];
     }
 }
