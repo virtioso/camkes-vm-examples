@@ -6,8 +6,10 @@
  * VM configuration for NVIDIA Orin AGX (Tegra234)
  *
  * Key devices passed through to guest:
- * - UARTI: SBSA/PL011 UART for console (simple MMIO, earlycon compatible)
+ * - TCU: Tegra Combined UART for console (uses HSP AON mailbox)
+ * - UARTI: SBSA/PL011 UART (backup console option)
  * - HSP Top0: Hardware Synchronization Primitives for BPMP doorbell
+ * - HSP AON: HSP for TCU communication
  * - SRAM: Shared memory for CPU-BPMP message passing
  * - BPMP: Boot and Power Management Processor (clocks, resets, power)
  */
@@ -39,11 +41,10 @@ assembly {
         };
 
         vm0.vm_image_config = {
-            "kernel_bootcmdline" : "console=ttyAMA0,115200 earlycon=pl011,mmio32,0x31d0000 debug init=/init arm64.nopauth maxcpus=1",
-            "kernel_stdout" : "/serial@31d0000",
+            "kernel_bootcmdline" : "console=ttyTCU0 earlycon=pl011,mmio32,0x31d0000 debug rdinit=/init arm64.nopauth maxcpus=1",
+            "kernel_stdout" : "/serial",
             "kernel_name" : "linux",
             "generate_dtb" : true,
-            "provide_dtb" : false,
             "provide_initrd" : true,
             "initrd_name" : "linux-initrd",
             "map_one_to_one" : false,
@@ -51,17 +52,39 @@ assembly {
         };
         vm0.num_vcpus = 4;
 
-        /* Pass through devices for console and clock/reset/power control */
+        /* Pass through devices from seL4 kernel DTB.
+         * HSP AON must be here for device frame generation.
+         * The TCU /serial node is added by fdt_plat_customize() hook
+         * in projects/vm/.../plat/orinagx/fdt.c with correct phandle reference. */
         vm0.dtb = dtb([
-            {"path": "/serial@31d0000"},      /* UARTI - SBSA UART console */
-            {"path": "/tegra-hsp@3c00000"},   /* HSP Top0 - BPMP doorbell */
+            {"path": "/bus@0"},               /* simple-bus parent for child enumeration */
+            {"path": "/bus@0/misc@100000"},   /* APB MISC - for tegra_is_silicon() */
+            {"path": "/bus@0/serial@31d0000"}, /* UARTI - SBSA UART (earlycon) */
+            {"path": "/bus@0/hsp@3c00000"},   /* HSP Top0 - BPMP doorbell */
+            {"path": "/bus@0/hsp@c150000"},   /* HSP AON - device frame for TCU mbox */
             {"path": "/sram@40000000"},       /* CPU-BPMP shared memory */
             {"path": "/bpmp"}                 /* BPMP node */
         ]);
 
+        /* Platform defaults from vmlinux.h include timer, psci, gic, TCU, UARTI, HSP, BPMP */
+
         /* VM RAM - device frames from dtb() passthrough are auto-generated */
         vm0.untyped_mmios = [
             "0x90000000:28",   /* 256MB VM RAM */
+        ];
+
+        /*
+         * IRQ passthrough for HSP and UART devices.
+         * GIC INTID = SPI number + 32
+         *
+         * HSP Top0 doorbell: SPI 176 -> INTID 208 (BPMP communication)
+         * HSP AON shared1: SPI 133 -> INTID 165 (TCU mailbox)
+         * UARTI: SPI 146 -> INTID 178 (backup console)
+         */
+        vm0.dtb_irqs = [
+            208,    /* HSP Top0 doorbell (SPI 176) - BPMP */
+            165,    /* HSP AON shared1 (SPI 133) - TCU */
+            178,    /* UARTI (SPI 146) */
         ];
     }
 }
