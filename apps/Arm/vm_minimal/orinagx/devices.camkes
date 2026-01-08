@@ -18,9 +18,9 @@
 
 #define VM_INITRD_MAX_SIZE 0x2000000  /* 32 MB */
 #define VM_RAM_BASE     0x90000000
-#define VM_RAM_SIZE     0x10000000   /* 256 MB */
-#define VM_DTB_ADDR     0x9E000000
-#define VM_INITRD_ADDR  0x9D000000
+#define VM_RAM_SIZE     0x20000000   /* 512 MB */
+#define VM_DTB_ADDR     0xAE000000
+#define VM_INITRD_ADDR  0xAD000000
 /*
  * ARM64 boot protocol requires kernel Image at text_offset from 2MB-aligned
  * base. Standard text_offset is 0x80000, but some platforms need 2MB offset.
@@ -41,13 +41,13 @@ assembly {
         };
 
         vm0.vm_image_config = {
-            "kernel_bootcmdline" : "console=ttyTCU0 earlycon=pl011,mmio32,0x31d0000 debug rdinit=/init arm64.nopauth maxcpus=1",
+            "kernel_bootcmdline" : "console=ttyTCU0 earlycon=pl011,mmio32,0x31d0000 debug loglevel=8 ignore_loglevel printk.devkmsg=on rdinit=/init arm64.nopauth maxcpus=1 iommu.passthrough=1",
             "kernel_stdout" : "/serial",
             "kernel_name" : "linux",
             "generate_dtb" : true,
             "provide_initrd" : true,
             "initrd_name" : "linux-initrd",
-            "map_one_to_one" : false,
+            "map_one_to_one" : true,
             "clean_cache" : true
         };
         vm0.num_vcpus = 4;
@@ -58,6 +58,7 @@ assembly {
          * in projects/vm/.../plat/orinagx/fdt.c with correct phandle reference. */
         vm0.dtb = dtb([
             {"path": "/bus@0"},               /* simple-bus parent for child enumeration */
+            {"path": "/bus@0/gpio@2200000"},  /* Main GPIO controller - PHY reset */
             {"path": "/bus@0/misc@100000"},   /* APB MISC - for tegra_is_silicon() */
             {"path": "/bus@0/serial@31d0000"}, /* UARTI - SBSA UART (earlycon) */
             {"path": "/bus@0/hsp@3c00000"},   /* HSP Top0 - BPMP doorbell */
@@ -65,22 +66,32 @@ assembly {
             {"path": "/bus@0/mmc@3460000"},   /* SDMMC4 - internal eMMC */
             {"path": "/bus@0/phy@3f20000"},   /* P2U PHY for MGBE0 */
             {"path": "/bus@0/ethernet@6800000"}, /* MGBE0 - Gigabit Ethernet */
+            {"path": "/mgbe-vm-irq-config"}, 
+            {"path": "/mgbe-vm-irq-config/vm_irq1"}, 
+            {"path": "/mgbe-vm-irq-config/vm_irq2"}, 
+            {"path": "/mgbe-vm-irq-config/vm_irq3"}, 
+            {"path": "/mgbe-vm-irq-config/vm_irq4"}, 
+            {"path": "/mgbe-vm-irq-config/vm_irq5"}, 
             {"path": "/sram@40000000"},       /* CPU-BPMP shared memory */
             {"path": "/bpmp"}                 /* BPMP node */
-            /* mgbe-vm-irq-config is added by fdt_plat_customize() with children */
         ]);
 
         /* Platform defaults from vmlinux.h include timer, psci, gic, TCU, UARTI, HSP, BPMP */
 
-        /* VM RAM - device frames from dtb() passthrough are auto-generated */
+        /* VM RAM - device frames from dtb() passthrough are auto-generated.
+         * Format: "paddr:size_bits:page_bits" where page_bits specifies the
+         * page size for retyping (12=4KB, 21=2MB). Default is 12 if omitted.
+         * Using 2MB pages reduces cap usage from 131072 to 256 for 512MB. */
         vm0.untyped_mmios = [
-            "0x90000000:28",   /* 256MB VM RAM */
+            "0x90000000:28:21",   /* 256MB VM RAM (2MB pages) */
+            "0xa0000000:28:21",   /* 256MB VM RAM (2MB pages, total 512MB) */
         ];
 
         /*
-         * IRQ passthrough for HSP, UART, and Ethernet devices.
+         * IRQ passthrough for HSP, UART, GPIO, and Ethernet devices.
          * GIC INTID = SPI number + 32
          *
+         * GPIO (48 IRQs): SPI 288-335 -> INTID 320-367 (PHY reset)
          * HSP Top0 doorbell: SPI 176 -> INTID 208 (BPMP communication)
          * HSP AON shared1: SPI 133 -> INTID 165 (TCU mailbox)
          * UARTI: SPI 146 -> INTID 178 (backup console)
@@ -90,6 +101,13 @@ assembly {
          * MGBE0 vm0: SPI 385 -> INTID 417 (DMA channel 0 IRQ)
          */
         vm0.dtb_irqs = [
+            /* GPIO SPI 288-335 -> INTID 320-367 */
+            320, 321, 322, 323, 324, 325, 326, 327,  /* bank 0 */
+            328, 329, 330, 331, 332, 333, 334, 335,  /* bank 1 (includes port Y) */
+            336, 337, 338, 339, 340, 341, 342, 343,  /* bank 2 */
+            344, 345, 346, 347, 348, 349, 350, 351,  /* bank 3 */
+            352, 353, 354, 355, 356, 357, 358, 359,  /* bank 4 */
+            360, 361, 362, 363, 364, 365, 366, 367,  /* bank 5 */
             208,    /* HSP Top0 doorbell (SPI 176) - BPMP */
             165,    /* HSP AON shared1 (SPI 133) - TCU */
             178,    /* UARTI (SPI 146) */
