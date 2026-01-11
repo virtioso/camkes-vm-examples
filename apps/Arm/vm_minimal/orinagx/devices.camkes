@@ -80,12 +80,23 @@ assembly {
             {"path": "/sram@40000000/sram@71000"}, /* 0x40071000 - BPMP RX shmem */
             {"path": "/bpmp"},                /* no MMIO - BPMP node */
             {"path": "/bus@0"},               /* no MMIO - bus parent */
-            {"path": "/bus@0/ethernet@6800000/mdio"}, /* no MMIO - MDIO bus */
-            {"path": "/bus@0/ethernet@6800000/mdio/phy@0"}, /* no MMIO - PHY (MDIO addr 0) */
-            {"path": "/bus@0/ethernet@6800000/stmmac-axi-config"} /* no MMIO - AXI config */
         ]);
 
-        /* Platform defaults from vmlinux.h include timer, psci, gic, TCU, UARTI, HSP, BPMP */
+        vm0.plat_keep_devices = [
+            "/bus@0/ethernet@6800000/mdio",
+            "/bus@0/ethernet@6800000/mdio/phy@0",
+            "/bus@0/ethernet@6800000/stmmac-axi-config",
+            /* stuff from vmlinux.h */
+            "/timer",
+            "/psci",
+            "/bus@0/interrupt-controller@f400000"
+        ];
+
+        vm0.plat_keep_devices_and_subtree = [
+            "/mgbe-vm-irq-config",
+            "/firmware",
+            "/sram@40000000",  /* SRAM container - child shmem in devices.camkes dtb() */
+        ];
 
         /* VM RAM and device MMIO regions.
          * Format: "paddr:size_bits:page_bits" where page_bits specifies the
@@ -109,8 +120,9 @@ assembly {
          * UARTI: SPI 146 -> INTID 178 (backup console)
          * SDMMC4: SPI 65 -> INTID 97 (internal eMMC)
          * P2U PHY: SPI 203 -> INTID 235 (MGBE0 PHY)
-         * MGBE0 common: SPI 384 -> INTID 416 (Gigabit Ethernet)
-         * MGBE0 vm0: SPI 385 -> INTID 417 (DMA channel 0 IRQ)
+         * MGBE0 (8 IRQs): SPI 384-391 -> INTID 416-423
+         *   - common (416), vm0-vm4 (417-421), macsec-ns (422), macsec-s (423)
+         *   - Driver uses 10 DMA channels across 5 VM IRQs (vm0-vm4)
          */
         vm0.dtb_irqs = [
             /* GPIO SPI 288-335 -> INTID 320-367 */
@@ -125,8 +137,12 @@ assembly {
             178,    /* UARTI (SPI 146) */
             97,     /* SDMMC4 (SPI 65) - internal eMMC */
             235,    /* P2U PHY (SPI 203) - MGBE0 PHY */
-            416,    /* MGBE0 common (SPI 384) - Gigabit Ethernet */
-            417,    /* MGBE0 vm0 (SPI 385) - DMA channel 0 */
+            416,    /* MGBE0 common (SPI 384) */
+            417,    /* MGBE0 vm0 (SPI 385) - DMA channels 0-1 */
+            418,    /* MGBE0 vm1 (SPI 386) - DMA channels 2-3 */
+            419,    /* MGBE0 vm2 (SPI 387) - DMA channels 4-5 */
+            420,    /* MGBE0 vm3 (SPI 388) - DMA channels 6-7 */
+            421,    /* MGBE0 vm4 (SPI 389) - DMA channels 8-9 */
         ];
     }
 }
