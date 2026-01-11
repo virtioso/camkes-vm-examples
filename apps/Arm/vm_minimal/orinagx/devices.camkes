@@ -108,6 +108,15 @@ assembly {
         vm0.untyped_mmios = [
             "0x90000000:28:21",   /* 256MB VM RAM (2MB pages) */
             "0xa0000000:28:21",   /* 256MB VM RAM (2MB pages, total 512MB) */
+
+            /* SMMU/MC regions for debug access via devmem2 (Option B)
+             * NOT in dtb() so Linux won't probe arm-smmu driver */
+            "0x02c00000:20",      /* MC - Memory Controller (1MB) */
+            "0x07000000:24",      /* smmu_niso1 shadow regs (16MB) */
+            "0x08000000:24",      /* smmu_niso1 main regs (16MB) */
+            "0x10000000:24",      /* smmu_iso (16MB) */
+            "0x11000000:24",      /* smmu_niso0 shadow regs (16MB) */
+            "0x12000000:24",      /* smmu_niso0 main regs (16MB) */
         ];
 
         /*
