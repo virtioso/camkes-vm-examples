@@ -89,6 +89,7 @@ assembly {
             /* stuff from vmlinux.h */
             "/timer",
             "/psci",
+            "/serial",                             /* 0xc168000 - TCU */
             "/bus@0/interrupt-controller@f400000"
         ];
 
