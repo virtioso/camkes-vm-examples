@@ -52,6 +52,11 @@ assembly {
         };
         vm0.num_vcpus = 1;
 
+        /* Hypervisor ftrace control interface - allows guest to control seL4 ftrace.
+         * Guest writes to this MMIO address trigger seL4_BenchmarkResetLog/FinalizeLog.
+         * Used for debugging guest-triggered kernel activity. */
+        vm0.hyp_ftrace = 0x0F010000;
+
         /* Pass through devices from seL4 kernel DTB.
          * IMPORTANT: Paths are regex patterns. Use $ anchor for exact matches,
          * otherwise "/bus@0" matches ALL children like "/bus@0/interrupt-controller".
